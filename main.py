@@ -158,7 +158,19 @@ class LinRegTask(Scene):
                 self.play(ReplacementTransform(entry, y_hat))
         self.wait()
 
+        y_hat_text = Text('Теоретические значения')
+        y_hat_text.scale_to_fit_width(data_table.width).next_to(data_table, DOWN)
+        y_hat_group = VGroup(y_hat_text, data_table.get_rows()[1])
+        self.play(Succession(Create(y_hat_text), Indicate(y_hat_group)))
+        self.wait()
+
         task = Tex(r'Задача:\\', r'$S(a, b) = \sum\limits_{i=1}^{n}(y_i - \hat{y_i})^2 \rightarrow \min$')
-        task.scale_to_fit_width(data_table.width).next_to(data_table, DOWN)
+        task.scale_to_fit_width(data_table.width).next_to(y_hat_text, DOWN)
         self.play(Write(task))
         self.wait()
+
+class LinRegMain(Scene):
+    def construct(self):
+        fix_tex()
+
+        
