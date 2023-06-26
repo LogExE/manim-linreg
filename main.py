@@ -1,14 +1,18 @@
 from manim import *
 from manim.utils.unit import *
 
+def fix_tex():
+    config['tex_template'] = TexTemplate(preamble=r'''
+        \usepackage[T2A]{fontenc}
+        \usepackage[english, russian]{babel}
+        \usepackage{amsmath}
+        \usepackage{amssymb}''')
 
-config['tex_template'] = TexTemplate(preamble=r'''
-\usepackage[T2A]{fontenc}
-\usepackage[english, russian]{babel}
-\usepackage{amsmath}''')
 
-class LinReg(Scene):
-    def title(self):
+class LinRegIntro(Scene):
+    def construct(self):
+        fix_tex()
+
         mnk = Tex("М", "Н", "К")
         self.play(FadeIn(mnk))
         self.wait(2)
@@ -27,19 +31,20 @@ class LinReg(Scene):
         linreg = Text("Линейная регрессия").move_to(DOWN)
         self.play(Write(linreg))
         self.play(Indicate(linreg))
-
-        self.play(FadeOut(g), FadeOut(linreg))
         self.wait()
-        self.clear()
 
-    def regr(self):
+class LinRegTask(Scene):
+    def construct(self):
+        fix_tex()
+        
         x_vals = ["x_i"] + [f"x_{i}" for i in range(2)] + ["\ldots"] + ["x_n"]
         y_vals = ["y_i"] + [f"y_{i}" for i in range(2)] + ["\ldots"] + ["y_n"]
-        t1 = MathTable([x_vals, y_vals]).shift(4 * LEFT)
-        t1.width = 40 * Percent(X_AXIS)
-        uptext = (
-            Text("Наблюдаемые значения").next_to(t1, UP).scale_to_fit_width(t1.width)
-        )
+        data_table = MathTable([x_vals, y_vals]).shift(4 * LEFT)
+        data_table.scale_to_fit_width(40 * Percent(X_AXIS))
+        uptext = Text("Наблюдаемые значения")
+        uptext.add_updater(lambda mob: mob
+                           .next_to(data_table, UP)
+                           .scale_to_fit_width(data_table.width))
 
         ax = Axes(
                 x_range=[-1, 15, 1],
@@ -49,11 +54,11 @@ class LinReg(Scene):
         ).shift(3 * RIGHT)
         xylabel = ax.get_axis_labels(MathTex("x"), MathTex("y"))
 
-        self.play(Create(uptext), Create(t1), Create(ax), Create(xylabel))
+        self.play(Create(uptext), Create(data_table), Create(ax), Create(xylabel))
         self.play(ApplyWave(uptext))
 
         def attach_coords(coords, col):
-            xyobj = t1.get_columns()[col].copy()
+            xyobj = data_table.get_columns()[col].copy()
             x, y = coords
             self.play(
                 xyobj[0].animate.move_to(ax.coords_to_point(x, -1)),
@@ -75,10 +80,8 @@ class LinReg(Scene):
                 self.play(Create(dot))
             self.wait()
 
-
-
         def make_full(coords, col):
-            rect = SurroundingRectangle(t1.get_columns()[col])
+            rect = SurroundingRectangle(data_table.get_columns()[col])
             self.play(Create(rect), run_time=2)
             self.wait()
             attach_coords(coords, col)
@@ -97,7 +100,7 @@ class LinReg(Scene):
         make_full(lcoords[1], 2)
 
         # ...
-        rect = SurroundingRectangle(t1.get_columns()[3])
+        rect = SurroundingRectangle(data_table.get_columns()[3])
         self.play(Create(rect), run_time=2)
         self.wait()
         for i, point in enumerate(lcoords[2:-1]):
@@ -118,35 +121,44 @@ class LinReg(Scene):
         self.wait()
         
         spaces = [r"\hat{y_i}"] + ["-", "-", r"\ldots", "-"]
-        t2 = MathTable([x_vals, y_vals, spaces]).shift(4 * LEFT)
-        t2.width = 40 * Percent(X_AXIS)
-        self.play(ReplacementTransform(t1, t2), uptext.animate.next_to(t2, UP))
+        data_table_mod = MathTable([x_vals, y_vals, spaces]).shift(4 * LEFT)
+        data_table_mod.scale_to_fit_width(40 * Percent(X_AXIS))
+        self.play(Transform(data_table, data_table_mod))
 
+        formula = MathTex(r'\hat{y_i} = a \cdot x_i + b')
+        formula.next_to(ax, DOWN)
+        self.play(FadeIn(formula))
+
+        i_brace = 2
         for i, coords in enumerate(lcoords):
             proj = (coords[0], line1_fun(coords[0]))
             point = ax.coords_to_point(*proj)
             h, v = create_lines(point)
             red_dot = Dot(radius=0.06, color=RED).move_to(point)
-            red_dot.set_z_index(abs(line1.z_index) + abs(h.z_index) + abs(v.z_index) + 1)
+            red_dot.set_z_index(1)
             self.play(Succession(Create(v), Create(red_dot), Create(h)))
             if i <= 1 or i == len(lcoords) - 1:
                 if i <= 1:
                     y_hat = MathTex(r'\hat{y_%d}' % i)
+                    entry = data_table.get_entries((3, i + 2))
                 else:
                     y_hat = MathTex(r'\hat{y_n}')
+                    entry = data_table.get_entries((3, 5))
+                #y_hat[0].scale_to_fit_width(entry)
                 y_hat.move_to(ax.coords_to_point(-1, line1_fun(coords[0])))
                 self.play(Create(y_hat))
             diff = Line(ax.coords_to_point(*coords), point, color=BLUE)
             self.play(Create(diff), Uncreate(h), Uncreate(v))
+            if i == i_brace:
+                brace = Brace(diff, direction=RIGHT)
+                br_text = brace.get_tex('|\hat{y_i} - y_i|')
+                self.play(Create(brace), Write(br_text))
             if i <= 1 or i == len(lcoords) - 1:
-                if i <= 1:
-                    i += 2
-                else:
-                    i = 5
-                self.play(y_hat.animate.move_to(t2.get_entries((3, i))))
-                self.play(ReplacementTransform(t2.get_entries((3, i)), y_hat))
+                self.play(y_hat.animate.move_to(entry))
+                self.play(ReplacementTransform(entry, y_hat))
         self.wait()
 
-    def construct(self):
-        self.title()
-        self.regr()
+        task = Tex(r'Задача:\\', r'$S(a, b) = \sum\limits_{i=1}^{n}(y_i - \hat{y_i})^2 \rightarrow \min$')
+        task.scale_to_fit_width(data_table.width).next_to(data_table, DOWN)
+        self.play(Write(task))
+        self.wait()
