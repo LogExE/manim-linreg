@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 set -e
-SCENES=("LinRegIntro" "LinRegTask")
+SCENES=("LinRegIntro" "LinRegTask" "LinRegMain")
 LIST_FILE="vid_list.txt"
 
 source venv/bin/activate
