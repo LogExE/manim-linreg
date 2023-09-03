@@ -4,7 +4,6 @@ set -e
 SCENES=("LinRegIntro" "LinRegTask" "LinRegMain")
 LIST_FILE="vid_list.txt"
 
-source venv/bin/activate
 manim -qh main.py "${SCENES[@]}"
 OUT=""
 for SCENE in "${SCENES[@]}"
