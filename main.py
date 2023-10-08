@@ -90,9 +90,6 @@ class LinRegTask(Scene):
             self.wait()
             self.play(Uncreate(rect))
 
-        def create_line(p1, p2):
-            return Line(ax.coords_to_point(*p1), ax.coords_to_point(*p2))
-
         lcoords = [(1, 2), (6, 8), (5, 1), (3, 3), (11, 10), (4, 9), (14, 7)]
 
         # first two
@@ -184,7 +181,7 @@ class LinRegMain(Scene):
         self.wait()
         expr1 = MathTex(r' = \sum\limits_{i=1}^{n}(\hat{y_i} - y_i)^2').next_to(eq1)
         self.play(Write(expr1))
-        expr2 = MathTex(r' = \sum\limits_{i=1}^{n}(a \cdot x + b - y_i)^2').next_to(eq1)
+        expr2 = MathTex(r' = \sum\limits_{i=1}^{n}(a \cdot x_i + b - y_i)^2').next_to(eq1)
         self.play(Transform(expr1, expr2))
         self.wait()
 
